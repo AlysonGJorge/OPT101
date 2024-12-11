@@ -59,19 +59,12 @@ bool receive_message()
   uint8_t packet[32];
 
   radio.startListening();
-
-  radio.read(&packet[0], sizeof(packet) / sizeof(uint8_t));
-
-  Serial.print(packet[0], HEX);
-  Serial.println();
-
-  Serial.print(packet[1], HEX);
-  Serial.println();
-
-  Serial.print(packet[2], HEX);
-  Serial.println();
-
+  delay(70);
+  radio.read(&packet[0], 32);
   radio.stopListening();
+
+  Serial.println(packet[0], HEX);
+
   radio.flush_rx();
 
   return true;
@@ -80,21 +73,14 @@ bool receive_message()
 bool send_message(char *data, uint8_t size, uint8_t destiny)
 {
   uint8_t packet[32];
-  packet[0] = MASTER_ADDR;
+  packet[0] = 213;
   packet[1] = destiny;
   packet[2] = NETWORK_ADDR;
   packet[31] = '\0';
 
-  Serial.print(packet[0], HEX);
-  Serial.println();
+  Serial.println(packet[0], HEX);
 
-  Serial.print(packet[1], HEX);
-  Serial.println();
-
-  Serial.print(packet[2], HEX);
-  Serial.println();
-
-  radio.write(&packet[0], sizeof(packet) / sizeof(uint8_t));
+  radio.write(&packet[0], 32);
   radio.flush_tx();
 
   return true;
@@ -221,7 +207,7 @@ bool send = false;
 void loop(void)
 {
   char data[] = "Print";
-  send_message(data, sizeof(data) / sizeof(char), WORKER_LED_ADDR);
+  send_message(data, 6, WORKER_LED_ADDR);
   delay(500);
   send = true;
 }

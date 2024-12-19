@@ -1,6 +1,6 @@
-#include <SPI.h>
 #include "RF24.h"
 #include "config.h"
+#include <SPI.h>
 
 // Instância o object para o nRF24L01 transmissor
 RF24 radio(CE_PIN, CSN_PIN);
@@ -8,17 +8,11 @@ RF24 radio(CE_PIN, CSN_PIN);
 // Pipe que define os endereços de leitura e escrita
 const uint64_t address[2] = {PIPE_ADDRESS, PIPE_ADDRESS};
 
-char payloadT[5] = "test\n";
-char payloadR[5];
-
-void init_radio()
-{
+void init_radio() {
   // Inicializa o rádio e verifica se o mesmo está funcionando corretamente
-  if (!radio.begin())
-  {
+  if (!radio.begin()) {
     Serial.println(F("Radio não está respondendo!"));
-    while (true)
-    {
+    while (true) {
     }
   }
 
@@ -36,7 +30,7 @@ void init_radio()
   radio.setDataRate(RF24_1MBPS);
 
   // Define o tamanho do payload para o rádio
-  radio.setPayloadSize(sizeof(payloadT));
+  radio.setPayloadSize(sizeof(char) * PACKET_SIZE);
 
   // Abre um canal de escrita com o endereço especifíco
   radio.openWritingPipe(address[0]);
@@ -54,24 +48,22 @@ void init_radio()
   radio.flush_rx();
 }
 
-bool receive_message()
-{
-  uint8_t packet[32];
+bool receive_message() {
+  uint8_t packet[5];
 
   radio.startListening();
   delay(70);
-  radio.read(&packet[0], 32);
+  radio.read(&packet[0], 5);
   radio.stopListening();
 
-  Serial.println(packet[0], HEX);
+  Serial.println(packet[0]);
 
   radio.flush_rx();
 
   return true;
 }
 
-bool send_message(char *data, uint8_t size, uint8_t destiny)
-{
+bool send_message(char *data, uint8_t size, uint8_t destiny) {
   uint8_t packet[32];
   packet[0] = 213;
   packet[1] = destiny;
@@ -122,7 +114,8 @@ bool send_message(char *data, uint8_t size, uint8_t destiny)
 //     if (radio.available())
 //     {
 //       radio.read(&pacoteR[0], 3);
-//       if (pacoteR[0] == MASTER_ADDR && pacoteR[1] == destino && pacoteR[2] == ACK)
+//       if (pacoteR[0] == MASTER_ADDR && pacoteR[1] == destino && pacoteR[2] ==
+//       ACK)
 //       {
 //         unsigned long end_timer = micros();    // end the timer
 //         Serial.print(end_timer - start_timer); // print the timer result
@@ -196,18 +189,12 @@ bool send_message(char *data, uint8_t size, uint8_t destiny)
 //   }
 // }
 
-void setup(void)
-{
+void setup(void) {
   Serial.begin(115200);
   init_radio();
 }
 
-bool send = false;
-
-void loop(void)
-{
-  char data[] = "Print";
-  send_message(data, 6, WORKER_LED_ADDR);
+void loop(void) {
+  receive_message();
   delay(500);
-  send = true;
 }

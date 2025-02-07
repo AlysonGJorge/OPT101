@@ -1,186 +1,67 @@
+#include "config.h"
+#include "message.h"
+#include "radio.h"
+
+#include <Arduino.h>
+#include <HardwareSerial.h>
+#include <RF24.h>
 #include <SPI.h>
-#include "RF24.h"
 
-//
-// Hardware configuration
-//
+//===-----------------------------------------------------------------------===
+// LED
+//===-----------------------------------------------------------------------===
 
-#define CE_PIN 7
-#define CSN_PIN 8
+int brightness = 0;
+int fadeAmount = 5;
 
-#define TIMEOUTACK 2000  // us
-#define TIMEOUTSEND 6000 // us
+void led_blink() {
+  analogWrite(LED_PIN, brightness);
 
-#define ACK 1
-// instantiate an object for the nRF24L01 transceiver
-RF24 radio(CE_PIN, CSN_PIN);
-uint64_t address[2] = {0x3030303030LL, 0x3030303030LL};
+  brightness += fadeAmount;
 
-char payloadT[5] = "test\n";
-char payloadR[5];
-uint8_t origem = 46;
-
-bool enviaTrem(char *pacote, uint8_t tamanho, uint8_t destino)
-{
-  pacote[0] = destino;
-  pacote[1] = origem;
-  char pacoteR[3];
-  bool enviou = false;
-  unsigned long start_timer = micros(); // start the timer
-  while (micros() - start_timer < TIMEOUTSEND)
-  {
-    radio.startListening();
-    delayMicroseconds(70);
-    radio.stopListening();
-    if (!radio.testCarrier())
-    {
-      radio.write(&pacote[0], tamanho);
-      enviou = true;
-      Serial.println("E");
-      break;
-    }
-    else
-    {
-      Serial.println("O");
-      delayMicroseconds(150);
-    }
+  if (brightness <= 0 || brightness >= 255) {
+    fadeAmount = -fadeAmount;
   }
-  if (!enviou)
-  {
-    return false;
-  }
-  unsigned long start_timer_ack = micros();
-  radio.startListening();
-  while (micros() - start_timer_ack < TIMEOUTACK)
-  {
-    if (radio.available())
-    {
-      radio.read(&pacoteR[0], 3);
-      if (pacoteR[0] == origem && pacoteR[1] == destino && pacoteR[2] == ACK)
-      {
-        unsigned long end_timer = micros();    // end the timer
-        Serial.print(end_timer - start_timer); // print the timer result
+}
 
-        return true;
-      }
-      radio.flush_rx();
+//===-----------------------------------------------------------------------===
+// Request To Send (RTS)
+//===-----------------------------------------------------------------------===
+
+bool rts_message() {
+  uint8_t tmp = 0;
+  uint64_t timer = micros();
+  uint64_t retrieve = 0;
+
+  while (micros() - timer < TIMEOUT_RTS) {
+    send_msg(MASTER_ADDR, RTS, tmp);
+
+    if (receive_msg(MASTER_ADDR, CTS, tmp)) {
+      return true;
     }
+
+    retrieve++;
+    delayMicroseconds(DELAY_RTS * retrieve);
   }
+
   return false;
 }
 
-bool recebeTrem(char *pacote, uint8_t tamanho, int TIMEOUT)
-{
-  unsigned long start_timer = micros(); // start the timer
-  bool recebeu = false;
-  bool enviou = false;
-  radio.startListening();
-  while (micros() - start_timer < TIMEOUT)
-  {
-    if (radio.available())
-    {
-      radio.read(&pacote[0], tamanho);
-      if (pacote[0] == origem)
-      {
-        recebeu = true;
-        Serial.println("R");
-        break;
-      }
-      radio.flush_rx();
-    }
-  }
-  radio.flush_rx();
-  if (!recebeu)
-  {
-    return false;
-  }
-  char pacoteACK[3];
-  pacoteACK[0] = pacote[1];
-  pacoteACK[1] = origem;
-  pacoteACK[2] = ACK;
-  start_timer = micros(); // start the timer
+//===-----------------------------------------------------------------------===
+// Setup e Loop
+//===-----------------------------------------------------------------------===
 
-  while (micros() - start_timer < TIMEOUTACK)
-  {
-    radio.startListening();
-    delayMicroseconds(70);
-    radio.stopListening();
-    if (!radio.testCarrier())
-    {
-      radio.write(&pacoteACK[0], 3);
-      Serial.print(int(pacoteACK[0]));
-      Serial.print(int(pacoteACK[1]));
-      Serial.println(int(pacoteACK[2]));
-      enviou = true;
-      Serial.println("E");
-      break;
-    }
-    else
-    {
-      delayMicroseconds(100);
-    }
-  }
-  if (!enviou)
-  {
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+void setup(void) {
+  Serial.begin(BAUD_RATE);
+  init_radio();
+  pinMode(LED_PIN, OUTPUT);
 }
 
-void setup(void)
-{
-
-  Serial.begin(115200);
-
-  // Setup and configure rf radio
-  if (!radio.begin())
-  {
-    Serial.println(F("radio hardware not responding!"));
-    while (true)
-    {
-      // hold in an infinite loop
-    }
-  }
-
-  radio.setPALevel(RF24_PA_MAX); // RF24_PA_MAX is default.
-  radio.setAutoAck(false);       // Don't acknowledge arbitrary signals
-  radio.disableCRC();            // Accept any signal we find
-  radio.setDataRate(RF24_1MBPS);
-
-  radio.setPayloadSize(sizeof(payloadT));
-
-  radio.openWritingPipe(address[0]);    // always uses pipe 0
-  radio.openReadingPipe(1, address[1]); // using pipe 1
-
-  radio.setChannel(23);
-
-  radio.printPrettyDetails();
-
-  radio.startListening();
-  radio.stopListening();
-  radio.flush_rx();
-}
-
-void loop(void)
-{
-  bool sucesso = enviaTrem(payloadR, 5, 43);
-  if (sucesso)
-  {
-    // print_aula(payloadR, 5);
-  }
-  delay(600);
-}
-
-void printAula(char *texto, byte tamanho)
-{
-  Serial.print(int(texto[0]));
-  Serial.print(int(texto[1]));
-  for (byte i = 2; i < tamanho; i++)
-  {
-    Serial.print(char(texto[i]));
-  }
-  Serial.println();
+void loop(void) {
+  /*bool canSend = rts_message();*/
+  /*if (canSend) {*/
+  /*  send_msg(MASTER_ADDR, DTA, value);*/
+  /*}*/
+  led_blink();
+  delay(WAIT_LOOP);
 }

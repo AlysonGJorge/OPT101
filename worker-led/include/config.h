@@ -56,7 +56,7 @@
 /**
  * Tempo de espera antes de realizar as operações no loop.
  */
-#define WAIT_LOOP 600
+#define WAIT_LOOP 300
 
 //===----------------------------------------------------------------------===//
 // Definições de Serial

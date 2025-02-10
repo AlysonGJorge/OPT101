@@ -8,40 +8,20 @@
 #include <SPI.h>
 
 //===-----------------------------------------------------------------------===
-// LED
+// Clear to Send
 //===-----------------------------------------------------------------------===
 
-int brightness = 0;
-int fadeAmount = 5;
-
-void led_blink() {
-  analogWrite(LED_PIN, brightness);
-
-  brightness += fadeAmount;
-
-  if (brightness <= 0 || brightness >= 255) {
-    fadeAmount = -fadeAmount;
-  }
-}
-
-//===-----------------------------------------------------------------------===
-// Request To Send (RTS)
-//===-----------------------------------------------------------------------===
-
-bool rts_message() {
+bool cts_message(uint8_t source) {
   uint8_t tmp = 0;
   uint64_t timer = micros();
-  uint64_t retrieve = 0;
 
-  while (micros() - timer < TIMEOUT_RTS) {
-    send_msg(MASTER_ADDR, RTS, tmp);
-
-    if (receive_msg(MASTER_ADDR, CTS, tmp)) {
+  while (micros() - timer < TIMEOUT_CTS) {
+    if (receive_msg(source, RTS, tmp)) {
+      send_msg(source, CTS, 0);
       return true;
     }
 
-    retrieve++;
-    delayMicroseconds(DELAY_RTS * retrieve);
+    delayMicroseconds(DELAY_CTS);
   }
 
   return false;
@@ -57,11 +37,15 @@ void setup(void) {
   pinMode(LED_PIN, OUTPUT);
 }
 
+uint8_t brightness = 0;
+
 void loop(void) {
-  /*bool canSend = rts_message();*/
-  /*if (canSend) {*/
-  /*  send_msg(MASTER_ADDR, DTA, value);*/
-  /*}*/
-  led_blink();
+  bool canReceive = cts_message(MASTER_ADDR);
+  if (canReceive) {
+    if (receive_msg(MASTER_ADDR, DTA, brightness)) {
+      Serial.println(brightness);
+      analogWrite(LED_PIN, brightness);
+    }
+  }
   delay(WAIT_LOOP);
 }

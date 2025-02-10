@@ -28,6 +28,29 @@ bool cts_message(uint8_t source) {
 }
 
 //===-----------------------------------------------------------------------===
+// Request To Send (RTS)
+//===-----------------------------------------------------------------------===
+
+bool rts_message() {
+  uint8_t tmp = 0;
+  uint64_t timer = micros();
+  uint64_t retrieve = 0;
+
+  while (micros() - timer < TIMEOUT_RTS) {
+    send_msg(WORKER_LED_ADDR, RTS, tmp);
+
+    if (receive_msg(WORKER_LED_ADDR, CTS, tmp)) {
+      return true;
+    }
+
+    retrieve++;
+    delayMicroseconds(DELAY_RTS * retrieve);
+  }
+
+  return false;
+}
+
+//===-----------------------------------------------------------------------===
 // Setup e Loop
 //===-----------------------------------------------------------------------===
 
@@ -36,13 +59,26 @@ void setup(void) {
   init_radio();
 }
 
+uint8_t brightness = 0;
+
 void loop(void) {
-  bool canReceive = cts_message(WORKER_LED_ADDR);
-  if (canReceive) {
-    uint8_t tmp = 0;
-    if (receive_msg(WORKER_LED_ADDR, DTA, tmp)) {
-      Serial.println(tmp);
+  for (int i = 0; i < 30; i++) {
+    bool canReceive = cts_message(WORKER_SENSOR_ADDR);
+    if (canReceive) {
+      if (receive_msg(WORKER_SENSOR_ADDR, DTA, brightness)) {
+        Serial.println(brightness);
+      }
     }
+
+    delay(300);
+  }
+
+  for (int i = 0; i < 30; i++) {
+    if (rts_message()) {
+      send_msg(WORKER_LED_ADDR, DTA, brightness);
+    }
+
+    delay(200);
   }
 
   delay(WAIT_LOOP);

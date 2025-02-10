@@ -38,7 +38,7 @@ void init_radio() {
   radio.openReadingPipe(1, address[1]);
 
   // Define o canal inicial de comunicação do rádio
-  radio.setChannel(23);
+  radio.setChannel(100);
 
   // Imprime detalhes de configuração do rádio
   radio.printPrettyDetails();

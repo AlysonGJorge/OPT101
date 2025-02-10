@@ -41,26 +41,35 @@ void setup(void) {
 }
 
 void loop(void) {
-  bool canSend = rts_message();
-  if (canSend) {
-  uint8_t value = analogRead(A0);
-  Serial.println(value);
-   send_msg(MASTER_ADDR, DTA, value);
+ 
+
+  int value = analogRead(SENSOR_PIN);
+  int ledValue = 0;
+  Serial.print(value);
+  if (value < 10) {
+    Serial.println(" - Dark");
+  } else if (value < 200) {
+    Serial.println(" - Dim");
+  } else if (value < 500) {
+    Serial.println(" - Light");
+  } else if (value < 800) {
+    Serial.println(" - Bright");
+  } else {
+    Serial.println(" - Very bright");
   }
 
-  // int value = analogRead(SENSOR_PIN);
-  // Serial.print(value);
-  // if (value < 10) {
-  //   Serial.println(" - Dark");
-  // } else if (value < 200) {
-  //   Serial.println(" - Dim");
-  // } else if (value < 500) {
-  //   Serial.println(" - Light");
-  // } else if (value < 800) {
-  //   Serial.println(" - Bright");
-  // } else {
-  //   Serial.println(" - Very bright");
-  // }
+  if(value < 500) {
+    ledValue = 255;
+  } else {
+    ledValue = 0;
+  }
+
+  bool canSend = rts_message();
+  if (canSend) {
+    // uint8_t value = analogRead(A0);
+    Serial.println(ledValue);
+    send_msg(MASTER_ADDR, DTA, ledValue);
+  }
 
   delay(WAIT_LOOP);
 }

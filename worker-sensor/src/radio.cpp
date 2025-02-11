@@ -26,7 +26,7 @@ void init_radio() {
 
   // Define a taxa de transmissão de dados. Neste caso a taxa de
   // transmissão é de 1 Mbps.
-  radio.setDataRate(RF24_1MBPS);
+  radio.setDataRate(RF24_2MBPS);
 
   // Define o tamanho do payload para o rádio
   radio.setPayloadSize(sizeof(char) * PACKET_SIZE);
@@ -38,7 +38,7 @@ void init_radio() {
   radio.openReadingPipe(1, address[1]);
 
   // Define o canal inicial de comunicação do rádio
-  radio.setChannel(23);
+  radio.setChannel(100);
 
   // Imprime detalhes de configuração do rádio
   radio.printPrettyDetails();

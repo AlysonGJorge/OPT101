@@ -62,7 +62,7 @@ void setup(void) {
 uint8_t brightness = 0;
 
 void loop(void) {
-  for (int i = 0; i < 30; i++) {
+  for (int i = 0; i < 20; i++) {
     bool canReceive = cts_message(WORKER_SENSOR_ADDR);
     if (canReceive) {
       if (receive_msg(WORKER_SENSOR_ADDR, DTA, brightness)) {
@@ -70,15 +70,15 @@ void loop(void) {
       }
     }
 
-    delay(300);
+    delay(100);
   }
 
-  for (int i = 0; i < 30; i++) {
+  for (int i = 0; i < 20; i++) {
     if (rts_message()) {
       send_msg(WORKER_LED_ADDR, DTA, brightness);
     }
 
-    delay(200);
+    delay(50);
   }
 
   delay(WAIT_LOOP);

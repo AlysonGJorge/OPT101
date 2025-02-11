@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Macro para facilitar o print de informações
 #if DEBUG

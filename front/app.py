@@ -16,25 +16,27 @@ def index():
             value = int(valueStr)
     except ValueError:
         value = -1
-    
+
     if value == 0:
         status = "Muito Claro"
-        brightness = 0
+        bg_color = f"rgb(255,255,255)"
+        text_color = "black"
     elif value == 60:
         status = "Claro"
-        brightness = (800 - value) * 255 // 300
+        bg_color = f"rgb(170,158,170)"
+        text_color = "black"
     elif value == 127:
         status = "Escuro"
-        brightness = (500 - value) * 255 // 300 + 128
+        bg_color = f"rgb(76,76,76)"
+        text_color =  "white"
     elif value == 0:
         status = "Muito Escuro"
-        brightness = 255  # Black background, white text
+        bg_color = f"rgb(0,0,0)"
+        text_color = "white"
     else:
         status = "Inválido"
-        brightness = 0  # Black background, white text
-    
-    bg_color = f"rgb({brightness},{brightness},{brightness})"
-    text_color = "black" if brightness > 128 else "white"
+        bg_color = f"rgb(255,255,255)"
+        text_color = "red"
 
     return render_template_string('''
     <html>
